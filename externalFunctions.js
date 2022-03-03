@@ -105,11 +105,11 @@ function calcGeometry(geo) {
   }
   section_geom = section_geom.concat(new_circle)
 
-  //draw bottom bars
+  //draw top bars
   var new_circle = [];
   for (let i = 0; i < nbars; i++) {
     new_circle[i] = {
-      type: 'circle', x_ref: 1, y_ref: 1, x0: x_bar[i] - 0.5 * dbar, y0: y_bar[i] - 0.5 * dbar + 0.5, x1: x_bar[i] + 0.5 * dbar, y1: y_bar[i] + 0.5 * dbar + 0.5, fillcolor: 'rgba(0, 0, 0, 1)',
+      type: 'circle', x_ref: 1, y_ref: 1, x0: x_bar[i] - 0.5 * dbar, y0: (geo.h-y_bar[i]) - 0.5 * dbar, x1: x_bar[i] + 0.5 * dbar, y1: (geo.h-y_bar[i]) + 0.5 * dbar, fillcolor: 'rgba(0, 0, 0, 1)',
     }
   }
   section_geom = section_geom.concat(new_circle)
@@ -129,4 +129,12 @@ function CoG(xvec,yvec) {
   B = yvec.reduce((a,b) => a+b,0)
   xtp = A/B
   return xtp
+}
+
+function linspace(min,max,nel) {
+  var xMax = max; //max x   
+  var xMin = min; //min x from previous section
+  var x = [...Array(nel+1).keys()];
+  x = x.map(a => a * ((xMax - xMin) / nel) + xMin)
+  return x
 }

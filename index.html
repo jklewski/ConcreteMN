@@ -67,139 +67,209 @@
     window.onload = (event) => {
 
     };
-</script>
+  </script>
 
 </head>
 
 <body>
-    <div class="container-fluid p-2">
+  <div class="container-fluid p-2">
     <div class="row align-items-start">
-        <div class="col-sm p-1" style="max-width: 300px;min-width: 300px;">
-          <input id="h" data-prefix="h&nbsp" data-suffix="mm" class="geom" type="number" value="400" min="0" max="1000"
-            step="10" />
-          <input id="b" data-prefix="b&nbsp" data-suffix="mm" class="geom" type="number" value="200" min="100" max="1000"
-            step="10" />
-    
-          <input id="dbar" data-prefix="ɸ" data-suffix="mm" class="geom" type="number" value="12" min="6" max="24"
-            step="2" />
-          <input id="nbars" data-prefix="n" class="geom" type="number" value="4" min="1" max="10" step="1" />
-    
-          <input id="fc" data-prefix="fc" data-suffix="MPa" class="mtrl" type="number" value="20" min="20" max="50"
-            step="5" />
-          <input id="fy" data-prefix="fy" data-suffix="MPa" class="mtrl" type="number" value="500" min="150" max="500"
-            step="5" />
-        </div>
-        <div class="col" id = PlotArea1 style="min-width: 300px;">            
-        </div>
-        <div class="col" id = PlotArea2 style="min-width: 300px;">   
-        </div>
+      <div class="col-sm p-1" style="max-width: 300px;min-width: 300px;">
+        <input id="h" data-prefix="h&nbsp" data-suffix="mm" class="geom" type="number" value="400" min="0" max="1000"
+          step="10" />
+        <input id="b" data-prefix="b&nbsp" data-suffix="mm" class="geom" type="number" value="200" min="100" max="1000"
+          step="10" />
+
+        <input id="dbar" data-prefix="ɸ" data-suffix="mm" class="geom" type="number" value="12" min="6" max="24"
+          step="2" />
+        <input id="nbars" data-prefix="n" class="geom" type="number" value="4" min="1" max="10" step="1" />
+
+        <input id="fc" data-prefix="fc" data-suffix="MPa" class="mtrl" type="number" value="20" min="20" max="50"
+          step="5" />
+        <input id="fy" data-prefix="fy" data-suffix="MPa" class="mtrl" type="number" value="500" min="150" max="500"
+          step="5" />
       </div>
+      <div class="col" id=PlotArea1 style="min-width: 300px;">
+      </div>
+      <div class="col" id=PlotArea2 style="min-width: 300px;">
+      </div>
+
     </div>
-    <div class="container-fluid" id="PlotArea3"></div>
-<script>
-mtrlInput = {};      
-$(".mtrl").each(function() {
-    mtrlInput[$(this).attr("id")] = $(this).val()*1e6;  
+  </div>
+  <div class="container-fluid" id="PlotArea3" style="width:50vh;"></div>
+
+  <div class="container">
+    <input type="range" id="slida" name="slida"
+           min="0" max="100" onchange="drawfunc()">
+    <label for="slida"><b>Normal force</b></label>
+  </div>
+
+  <div class="row">
+    <div class="col-5" id="PlotArea4"></div>
+    <div class="col-5" id="PlotArea5"></div>
+  </div>
+</div>
+  <script>
+    mtrlInput = {};
+    $(".mtrl").each(function () {
+      mtrlInput[$(this).attr("id")] = $(this).val() * 1e6;
     })
-geomInput = {};
- $(".geom").each(function () {
-    geomInput[$(this).attr("id")] = $(this).val()/1e3;
+    geomInput = {};
+    $(".geom").each(function () {
+      geomInput[$(this).attr("id")] = $(this).val() / 1e3;
     });
-geomInput.nbars *= 1000;
+    geomInput.nbars *= 1000;
 
-var E_s = 200e9;
-var E_cm = 30e9;
-var eps_cu = 3.5e-3;
+    var E_s = 200e9;
+    var E_cm = 30e9;
+    var eps_cu = 3.5e-3;
 
 
-//Get stress strain curve
-var mtrl = calcMtrl(mtrlInput.fc,E_cm,mtrlInput.fy,E_s)
-mtrl.fy = mtrlInput.fy;
-mtrl.Es = E_s;
-mtrl.E_cm = E_cm;
+    //Get stress strain curve
+    var mtrl = calcMtrl(mtrlInput.fc, E_cm, mtrlInput.fy, E_s)
+    mtrl.fy = mtrlInput.fy;
+    mtrl.Es = E_s;
+    mtrl.E_cm = E_cm;
 
-var geom = calcGeometry(geomInput)
+    var geom = calcGeometry(geomInput)
 
-</script>
+  </script>
 
-<script>
-var ax1 = document.getElementById("PlotArea1")
-var trace1 = {y:mtrl.sigma_s, x:mtrl.eps_s, mode:'lines',type: 'scatter'}
-var data1 = [trace1]
-var layout = {autosize:false,height:300, width:300};
-Plotly.newPlot(ax1,data1)
 
-var ax2 = document.getElementById("PlotArea2")
-var trace2 = {y:mtrl.sigma_c, x:mtrl.eps_c, mode:'lines',type: 'scatter'}
-var data2 = [trace2]
-
-Plotly.newPlot(ax2,data2)
-</script>
-
-<script>
+  <script>
     //Calculate minimum x
     //Assume yielding top
     //force equilibrium
     var yvec = []
     var xvec = [...Array(100).keys()];
     xMax = geom.d;
-    xMin = geom.h-geom.d;
-    xvec = xvec.map(a => a * ((xMax-xMin)/xvec.length) + xMin)
-    for (let i = 0; i<xvec.length; i++) {
-    var eps_s1_vec = eps_cu - ((eps_cu / xvec[i]) * (geom.h-geom.d))
-    var sigma_s1_vec = -Math.min(Math.abs(eps_s1_vec*mtrl.Es),mtrl.fy);
-    var eps_s2_vec = eps_cu - ((eps_cu / xvec[i]) * geom.d)
-    var sigma_s2_vec = Math.min(Math.abs(eps_s2_vec*mtrl.Es),mtrl.fy);
-    var fc_avg = -average(mtrl.sigma_c);
-    yvec[i] = geom.A_s * (sigma_s1_vec+sigma_s2_vec) + fc_avg * geom.b * xvec[i]
+    xMin = geom.h - geom.d;
+    xvec = linspace(xMin,xMax,100)
+    for (let i = 0; i < xvec.length; i++) {
+      var eps_s1_vec = eps_cu - ((eps_cu / xvec[i]) * (geom.h - geom.d))
+      var sigma_s1_vec = -Math.min(Math.abs(eps_s1_vec * mtrl.Es), mtrl.fy);
+      var eps_s2_vec = eps_cu - ((eps_cu / xvec[i]) * geom.d)
+      var sigma_s2_vec = Math.min(Math.abs(eps_s2_vec * mtrl.Es), mtrl.fy);
+      var fc_avg = -average(mtrl.sigma_c);
+      yvec[i] = geom.A_s * (sigma_s1_vec + sigma_s2_vec) + fc_avg * geom.b * xvec[i]
     }
     var id = findzero(yvec)
-    
+
     //iterate over various x to find M-N
     var nel = 200; //number of values, total
-    var xMax = geom.h*2; //max x   
+    var xMax = geom.h * 2; //max x   
     var xMin = xvec[id]; //min x from previous section
-    var x = [...Array(nel).keys()]; 
-    x = x.map(a => a * ((xMax-xMin)/nel) + xMin)
+    var x = linspace(xMin,xMax,nel)
     M = [];
     N = [];
-    for (let i = 0; i<x.length;i++) {
-    //calculate steel strains and stress
-    var eps_s1 = -3.5e-3 + ((3.5e-3 / x[i]) * (geom.h-geom.d))
-    var sigma_s1 = -Math.min(Math.abs(eps_s1*mtrl.Es),mtrl.fy);
-    var eps_s2 = -3.5e-3 + ((3.5e-3 / x[i]) * geom.d)
-    if (eps_s2>0) {
-        var sigma_s2 = Math.min(Math.abs(eps_s2*mtrl.Es),mtrl.fy);
-    }
-    else {
-        var sigma_s2 = -Math.min(Math.abs(eps_s2*mtrl.Es),mtrl.fy);
-    }
-    //calculate force and CoG of stress block
-    if (x[i]<=geom.h) {
+    pathdefs = [];
+    Fs1_out = [];
+    Fs2_out = [];
+
+    for (let i = 0; i < x.length; i++) {
+      //calculate steel strains and stress
+      var eps_s1 = -3.5e-3 + ((3.5e-3 / x[i]) * (geom.h - geom.d))
+      var sigma_s1 = -Math.min(Math.abs(eps_s1 * mtrl.Es), mtrl.fy);
+      var eps_s2 = -3.5e-3 + ((3.5e-3 / x[i]) * geom.d)
+      if (eps_s2 > 0) {
+        var sigma_s2 = Math.min(Math.abs(eps_s2 * mtrl.Es), mtrl.fy);
+      }
+      else {
+        var sigma_s2 = -Math.min(Math.abs(eps_s2 * mtrl.Es), mtrl.fy);
+      }
+      //calculate force and CoG of stress block
+      if (x[i] <= geom.h) {
         var Fc = -average(mtrl.sigma_c) * x[i] * geom.b;
-        var Fc_CoG = (geom.h-x[i]) + x[i]*CoG(mtrl.eps_c,mtrl.sigma_c)/eps_cu     
-    }
-    else {
-        var id_start = Math.round(mtrl.eps_c.length-(((geom.h/x[i]))*mtrl.eps_c.length));
+        var sigma_c_segment = mtrl.sigma_c;
+        var eps_c_segment = mtrl.eps_c;
+        var Fc_CoG = (geom.h - x[i]) + x[i] * CoG(eps_c_segment, sigma_c_segment) / eps_cu
+      }
+      else {
+        var id_start = Math.round(mtrl.eps_c.length - (((geom.h / x[i])) * mtrl.eps_c.length));
         var id_end = mtrl.eps_c.length;
-        var Fc = -average(mtrl.sigma_c.slice(id_start,id_end)) * geom.h * geom.b;
-        var Fc_CoG = geom.h * (CoG(mtrl.eps_c.slice(id_start,id_end),mtrl.sigma_c.slice(id_start,id_end)) - mtrl.eps_c[id_start]) / (eps_cu-mtrl.eps_c[id_start]);     
+        var Fc = -average(mtrl.sigma_c.slice(id_start, id_end)) * geom.h * geom.b;
+        var sigma_c_segment = mtrl.sigma_c.slice(id_start, id_end)
+        var eps_c_segment = mtrl.eps_c.slice(id_start, id_end)
+        var Fc_CoG = geom.h * (CoG(eps_c_segment,sigma_c_segment) - mtrl.eps_c[id_start]) / (eps_cu - mtrl.eps_c[id_start]);
+      }
+      //set up force equilibrium Fc+Fs1+Fs2 = N
+      Fs1 = geom.A_s * sigma_s1;
+      Fs2 = geom.A_s * sigma_s2;
+      N[i] = -(Fs1 + Fs2 + Fc);
+      //set up moment equilibrium around h/2
+      M[i] = -(Fs1 * (geom.d - geom.h / 2) + Fs2 * -(geom.d - geom.h / 2) + Fc * (Fc_CoG - geom.h / 2))
+      Fs1_out[i] = Fs1;
+      Fs2_out[i] = Fs2;
+      //Draw polygons from strss and strain distributions
+      
+      //create a vector with regular spaced values, between x (or 0) and h
+      if (x[i] < geom.h) {
+        pathdef = 'M0,' + (geom.h-x[i])
+      } else {
+        pathdef = 'M0,' + 0
+      }
+
+            //iterate over various x to find M-N 
+      yc = linspace(geom.h-x[i],geom.h,eps_c_segment.length)
+
+        for (let j = 0; j < eps_c_segment.length; j++) {
+          substr = 'L' + Math.round(sigma_c_segment[j] * 10) / 10 + ',' + yc[j];
+          pathdef = pathdef.concat(substr)
+        }
+        pathdefs[i] = pathdef + 'L0,' + geom.h + 'Z';
+      
+      
     }
-    //set up force equilibrium Fc+Fs1+Fs2 = N
-    Fs1 = geom.A_s * sigma_s1;
-    Fs2 = geom.A_s * sigma_s2;
-    N[i] = -(Fs1 + Fs2 + Fc);
-    //set up moment equilibrium around h/2
-    M[i] = -(Fs1 * (geom.d-geom.h/2) + Fs2 * -(geom.d-geom.h/2) + Fc*(Fc_CoG-geom.h/2))
+  drawfunc()
 
-    trace = {x:M,y:N,type:"scatter"}
+//HERE COMES THE PLOT!
+function drawfunc() {
+slider = document.getElementById("slida")
+k = Math.max(0,Math.ceil(slider.value/100 * M.length)-1)
+
+    layout3 = {
+      xaxis: { title: "<b>Moment</b>" },
+      yaxis: { title: "<b>Normal Force</b>" }
+    }
+    trace1 = {
+      x: M,
+      y: N,
+      type: "scatter"
+    }
+    trace2 = {
+      x: M[k],
+      y: N[k],
+      type:"scatter"
+    }
     ax3 = document.getElementById("PlotArea3")
-    Plotly.newPlot(ax3,[trace])
-}
+    Plotly.newPlot(ax3, [trace1,trace2], layout3)
 
+    //plot geometry
+    layout4 = {
+      shapes: geom.sectionGeom,
+      xaxis: { range: [0, geom.b] },
+      yaxis: { range: [0, geom.h], scaleanchor: 'x' },
+    }
 
+    ax4 = document.getElementById("PlotArea4")
+    Plotly.newPlot(ax4, [{ x: [0, 0], y: [0, 0] }], layout4)
 
-</script>
+    //plot stress distribution
+    stress_dist = {
+        type: 'path', path: pathdefs[k], line: { width: 1, color: 'rgb(0,0,0)' }, fillcolor: 'rgba(0,0,255,0.5)',
+        xref: "x", yref: "y"
+      }
+    
+    layout5 = {
+      shapes: [stress_dist],
+      xaxis: { range: [-55e6, 55e6] },
+      yaxis: { range: [0, geom.h]},
+    }
+    data = [{x:[0,-Fs1_out[k]/geom.A_s/10],y:[geom.d,geom.d]},
+    {x:[0,-Fs2_out[k]/geom.A_s/10],y:[geom.h-geom.d,geom.h-geom.d]}]
+    ax5 = document.getElementById("PlotArea5")
+    Plotly.newPlot(ax5, data, layout5)
+  }
+  </script>
 
 </body>
-
