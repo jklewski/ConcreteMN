@@ -1,0 +1,205 @@
+<!--Copyright <2021> <Jonas Niklewski>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+    
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="styles.css">
+  <script src="externalFunctions.js" type="text/javascript"></script>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.0.0/math.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.6.3.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-input-spinner@3.1.8/src/bootstrap-input-spinner.js"></script>
+
+  <script>
+    $(document).ready(function () {
+      $("input[type='number']").inputSpinner({
+        // button text/icons
+        decrementButton: "<strong>-</strong>",
+        incrementButton: "<strong>+</strong>",
+        // class of input group
+        groupClass: "input-group-spinner",
+        // button class
+        buttonsClass: "btn-outline-secondary",
+        // button width
+        buttonsWidth: "2.5em",
+        // text alignment
+        textAlign: "center",
+        // delay in milliseconds
+        autoDelay: 500,
+        // interval in milliseconds
+        autoInterval: 100,
+        // set this `true` to disable the possibility to enter or paste the number via keyboard
+        buttonsOnly: false,
+        // set this to `false` to disallow the use of the up and down arrow keys to step
+        keyboardStepping: true,
+        // the locale, per default detected automatically from the browser
+        locale: navigator.language,
+        // the template of the input
+        template: // the template of the input
+          '<div class="input-group ${groupClass}">' +
+          '<input type="text" inputmode="decimal" style="text-align: ${textAlign}" class="form-control form-control-text-input"/>' +
+          '<div class="input-group-prepend"><button style="min-width: ${buttonsWidth}" class="btn btn-decrement ${buttonsClass} btn-minus" type="button">${decrementButton}</button></div>' +
+          '<div class="input-group-append"><button style="min-width: ${buttonsWidth}" class="btn btn-increment ${buttonsClass} btn-plus" type="button">${incrementButton}</button></div>' +
+          '</div>'
+
+
+
+      });
+      $(".geom").on('input', function () {
+
+      })
+    });
+
+    //run everything when finished loading
+    window.onload = (event) => {
+
+    };
+</script>
+
+</head>
+
+<body>
+    <div class="container-fluid p-2">
+    <div class="row align-items-start">
+        <div class="col-sm p-1" style="max-width: 300px;min-width: 300px;">
+          <input id="h" data-prefix="h&nbsp" data-suffix="mm" class="geom" type="number" value="400" min="0" max="1000"
+            step="10" />
+          <input id="b" data-prefix="b&nbsp" data-suffix="mm" class="geom" type="number" value="200" min="100" max="1000"
+            step="10" />
+    
+          <input id="dbar" data-prefix="ɸ" data-suffix="mm" class="geom" type="number" value="12" min="6" max="24"
+            step="2" />
+          <input id="nbars" data-prefix="n" class="geom" type="number" value="4" min="1" max="10" step="1" />
+    
+          <input id="fc" data-prefix="fc" data-suffix="MPa" class="mtrl" type="number" value="20" min="20" max="50"
+            step="5" />
+          <input id="fy" data-prefix="fy" data-suffix="MPa" class="mtrl" type="number" value="500" min="150" max="500"
+            step="5" />
+        </div>
+        <div class="col" id = PlotArea1 style="min-width: 300px;">            
+        </div>
+        <div class="col" id = PlotArea2 style="min-width: 300px;">   
+        </div>
+      </div>
+    </div>
+    <div class="container-fluid" id="PlotArea3"></div>
+<script>
+mtrlInput = {};      
+$(".mtrl").each(function() {
+    mtrlInput[$(this).attr("id")] = $(this).val()*1e6;  
+    })
+geomInput = {};
+ $(".geom").each(function () {
+    geomInput[$(this).attr("id")] = $(this).val()/1e3;
+    });
+geomInput.nbars *= 1000;
+
+var E_s = 200e9;
+var E_cm = 30e9;
+var eps_cu = 3.5e-3;
+
+
+//Get stress strain curve
+var mtrl = calcMtrl(mtrlInput.fc,E_cm,mtrlInput.fy,E_s)
+mtrl.fy = mtrlInput.fy;
+mtrl.Es = E_s;
+mtrl.E_cm = E_cm;
+
+var geom = calcGeometry(geomInput)
+
+</script>
+
+<script>
+var ax1 = document.getElementById("PlotArea1")
+var trace1 = {y:mtrl.sigma_s, x:mtrl.eps_s, mode:'lines',type: 'scatter'}
+var data1 = [trace1]
+var layout = {autosize:false,height:300, width:300};
+Plotly.newPlot(ax1,data1)
+
+var ax2 = document.getElementById("PlotArea2")
+var trace2 = {y:mtrl.sigma_c, x:mtrl.eps_c, mode:'lines',type: 'scatter'}
+var data2 = [trace2]
+
+Plotly.newPlot(ax2,data2)
+</script>
+
+<script>
+    //Calculate minimum x
+    //Assume yielding top
+    //force equilibrium
+    var yvec = []
+    var xvec = [...Array(100).keys()];
+    xMax = geom.d;
+    xMin = geom.h-geom.d;
+    xvec = xvec.map(a => a * ((xMax-xMin)/xvec.length) + xMin)
+    for (let i = 0; i<xvec.length; i++) {
+    var eps_s1_vec = eps_cu - ((eps_cu / xvec[i]) * (geom.h-geom.d))
+    var sigma_s1_vec = -Math.min(Math.abs(eps_s1_vec*mtrl.Es),mtrl.fy);
+    var eps_s2_vec = eps_cu - ((eps_cu / xvec[i]) * geom.d)
+    var sigma_s2_vec = Math.min(Math.abs(eps_s2_vec*mtrl.Es),mtrl.fy);
+    var fc_avg = -average(mtrl.sigma_c);
+    yvec[i] = geom.A_s * (sigma_s1_vec+sigma_s2_vec) + fc_avg * geom.b * xvec[i]
+    }
+    var id = findzero(yvec)
+    
+    //iterate over various x to find M-N
+    var nel = 200; //number of values, total
+    var xMax = geom.h*2; //max x   
+    var xMin = xvec[id]; //min x from previous section
+    var x = [...Array(nel).keys()]; 
+    x = x.map(a => a * ((xMax-xMin)/nel) + xMin)
+    M = [];
+    N = [];
+    for (let i = 0; i<x.length;i++) {
+    //calculate steel strains and stress
+    var eps_s1 = -3.5e-3 + ((3.5e-3 / x[i]) * (geom.h-geom.d))
+    var sigma_s1 = -Math.min(Math.abs(eps_s1*mtrl.Es),mtrl.fy);
+    var eps_s2 = -3.5e-3 + ((3.5e-3 / x[i]) * geom.d)
+    if (eps_s2>0) {
+        var sigma_s2 = Math.min(Math.abs(eps_s2*mtrl.Es),mtrl.fy);
+    }
+    else {
+        var sigma_s2 = -Math.min(Math.abs(eps_s2*mtrl.Es),mtrl.fy);
+    }
+    //calculate force and CoG of stress block
+    if (x[i]<=geom.h) {
+        var Fc = -average(mtrl.sigma_c) * x[i] * geom.b;
+        var Fc_CoG = (geom.h-x[i]) + x[i]*CoG(mtrl.eps_c,mtrl.sigma_c)/eps_cu     
+    }
+    else {
+        var id_start = Math.round(mtrl.eps_c.length-(((geom.h/x[i]))*mtrl.eps_c.length));
+        var id_end = mtrl.eps_c.length;
+        var Fc = -average(mtrl.sigma_c.slice(id_start,id_end)) * geom.h * geom.b;
+        var Fc_CoG = geom.h * (CoG(mtrl.eps_c.slice(id_start,id_end),mtrl.sigma_c.slice(id_start,id_end)) - mtrl.eps_c[id_start]) / (eps_cu-mtrl.eps_c[id_start]);     
+    }
+    //set up force equilibrium Fc+Fs1+Fs2 = N
+    Fs1 = geom.A_s * sigma_s1;
+    Fs2 = geom.A_s * sigma_s2;
+    N[i] = -(Fs1 + Fs2 + Fc);
+    //set up moment equilibrium around h/2
+    M[i] = -(Fs1 * (geom.d-geom.h/2) + Fs2 * -(geom.d-geom.h/2) + Fc*(Fc_CoG-geom.h/2))
+
+    trace = {x:M,y:N,type:"scatter"}
+    ax3 = document.getElementById("PlotArea3")
+    Plotly.newPlot(ax3,[trace])
+}
+
+
+
+</script>
+
+</body>
+
