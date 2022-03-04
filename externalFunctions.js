@@ -92,7 +92,7 @@ function calcGeometry(geo) {
   //draw cross section
   section_geom = [
     {
-      type: 'rect', x0: 0, y0: 0, x1: w, y1: h, line: { color: 'rgba(0, 0, 0, 1)', width: 2 }, fillcolor: 'rgba(150, 150, 150, 0.7)',
+      type: 'rect', x_ref: 1, y_ref: 1,x0: 0, y0: 0, x1: w, y1: h, line: { color: 'rgba(0, 0, 0, 1)', width: 2 }, fillcolor: 'rgba(150, 150, 150, 0.7)',
     },
   ]
 
@@ -132,6 +132,7 @@ function CoG(xvec,yvec) {
 }
 
 function linspace(min,max,nel) {
+  nel = nel-1
   var xMax = max; //max x   
   var xMin = min; //min x from previous section
   var x = [...Array(nel+1).keys()];
